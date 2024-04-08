@@ -3,20 +3,20 @@ from sklearn.metrics import roc_curve
 import argparse
 import json
 
-def calculate_vul_det_score(predictions, ground_truth, target_fpr=0.1):
+def calculate_vul_det_score(predictions, ground_truth, target_fpr=0.005):
     """
-    Calculate the false positive rate (FPR), false negative rate (FNR), and the threshold for a given target FPR.
+    Calculate the vulnerability detection score (VD-S) given a tolerable FPR.
     
     Args:
     - predictions: List of model prediction probabilities for the positive class.
-    - ground_truth: List of ground truth labels, where 1 means positive class, and 0 means negative class.
-    - target_fpr: The target false positive rate.
+    - ground_truth: List of ground truth labels, where 1 means vulnerable class, and 0 means benign class.
+    - target_fpr: The tolerable false positive rate.
     
     Returns:
-    - fpr: Calculated false positive rate at the found threshold.
-    - fnr: Calculated false negative rate at the found threshold.
-    - threshold: The threshold used to calculate FPR and FNR.
+    - vds: Calculated vulnerability detection score given the acceptable .
+    - threshold: The classification threashold for vulnerable prediction.
     """
+    
     # Calculate FPR, TPR, and thresholds using ROC curve
     fpr, tpr, thresholds = roc_curve(ground_truth, predictions)
     
@@ -35,17 +35,12 @@ def calculate_vul_det_score(predictions, ground_truth, target_fpr=0.1):
     # Classify predictions based on the chosen threshold
     classified_preds = [1 if pred >= chosen_threshold else 0 for pred in predictions]
     
-    # Calculate FNR
+    # Calculate VD-S
     fn = sum([1 for i in range(len(ground_truth)) if ground_truth[i] == 1 and classified_preds[i] == 0])
     tp = sum([1 for i in range(len(ground_truth)) if ground_truth[i] == 1 and classified_preds[i] == 1])
-    fnr = fn / (fn + tp) if (fn + tp) > 0 else 0
+    vds = fn / (fn + tp) if (fn + tp) > 0 else 0
     
-    # Recalculate FPR for the chosen threshold accurately
-    fp = sum([1 for i in range(len(ground_truth)) if ground_truth[i] == 0 and classified_preds[i] == 1])
-    tn = sum([1 for i in range(len(ground_truth)) if ground_truth[i] == 0 and classified_preds[i] == 0])
-    fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
-    
-    return fpr, fnr, chosen_threshold
+    return vds, chosen_threshold
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Calculate vulnerability detection score.")
@@ -77,5 +72,5 @@ if __name__ == "__main__":
         ground_truth.append(idx2label[idx])
         pred.append(pred_prob[idx])
 
-    fpr, vds, threshold = calculate_vul_det_score(pred, ground_truth, target_fpr=0.005)
-    print(f"VD-S: {vds}, Picked FPR: {fpr}, Threshold: {threshold}")
+    vds, threshold = calculate_vul_det_score(pred, ground_truth, target_fpr=0.005)
+    print(f"VD-S: {vds}, Picked FPR: {target_fpr}, Threshold: {threshold}")
