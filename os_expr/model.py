@@ -202,10 +202,9 @@ class DefectModel(nn.Module):
             return prob
 
 
-# Actually, this classifier works for general decoder-only LLMs
-class LlamaClassifier(nn.Module):
+class DecoderClassifier(nn.Module):
     def __init__(self, encoder, config, tokenizer, args):
-        super(LlamaClassifier, self).__init__()
+        super(DecoderClassifier, self).__init__()
         self.encoder = encoder
         self.config=config
         self.tokenizer=tokenizer
@@ -233,15 +232,13 @@ class LlamaClassifier(nn.Module):
                 sequence_lengths = -1
 
         pooled_logits = logits[torch.arange(batch_size, device=logits.device), sequence_lengths]
-        # print(pooled_logits.shape)
         prob = nn.functional.softmax(pooled_logits, dim=-1)
-        # print(prob.shape)
+
 
         if labels is not None:
             labels = labels.to(logits.device)
             loss_fct = nn.CrossEntropyLoss(weight=weight)
-            # print(pooled_logits.view(-1, 2).shape)
-            # print(labels.view(-1).shape)
+
             loss = loss_fct(pooled_logits.view(-1, 2), labels.view(-1))
             return loss, prob
         else:

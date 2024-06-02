@@ -19,7 +19,7 @@ import json
 
 from tqdm import tqdm, trange
 import multiprocessing
-from model import Model, LlamaClassifier
+from model import Model, DecoderClassifier
 
 cpu_cont = multiprocessing.cpu_count()
 from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
@@ -36,7 +36,7 @@ import os
 logger = get_logger(__name__)
 
 MODEL_CLASSES = {
-    'llama': (LlamaConfig, LlamaModel, LlamaTokenizer),
+    'codegen': (LlamaConfig, LlamaModel, LlamaTokenizer),
     'starcoder': (Starcoder2Config, Starcoder2Model, AutoTokenizer)
 }
 
@@ -58,7 +58,7 @@ class InputFeatures(object):
         
 def convert_examples_to_features(js,tokenizer,args):
     code = js['func']
-    if args.model_type in ["llama"]:
+    if args.model_type in ["codegen"]:
         code_tokens = tokenizer.tokenize(code)
         if '</s>' in code_tokens:
             code_tokens = code_tokens[:code_tokens.index('</s>')]
@@ -70,7 +70,7 @@ def convert_examples_to_features(js,tokenizer,args):
         code_tokens=tokenizer.tokenize(code)
         code_tokens = code_tokens[:args.block_size-2]
         source_tokens =[tokenizer.cls_token]+code_tokens+[tokenizer.sep_token]
-    if args.model_type in ["llama"]:
+    if args.model_type in ["codegen"]:
         source_ids = tokenizer.encode(js['func'].split("</s>")[0], max_length=args.block_size, padding='max_length', truncation=True)
     else:
         source_ids =  tokenizer.convert_tokens_to_ids(source_tokens)
@@ -335,7 +335,7 @@ def evaluate(args, accelerator, eval_dataloader, eval_dataset, model, tokenizer,
     eval_loss = torch.mean(losses)
     logits=np.concatenate(logits,0)
     labels=np.concatenate(labels,0)
-    if args.model_type in set(['llama', 'starcoder']):
+    if args.model_type in set(['codegen', 'starcoder']):
         preds=logits[:,1]>0.5
     else:
         preds=logits[:,0]>0.5
@@ -420,7 +420,7 @@ def test(args, accelerator, model, tokenizer):
 
     logits=np.concatenate(logits,0)
     labels=np.concatenate(labels,0)
-    if args.model_type in set(['llama', 'starcoder']):
+    if args.model_type in set(['codegen', 'starcoder']):
         preds=logits[:,1]>0.5
         vuln_scores = logits[:,1].tolist()
     else:
@@ -534,7 +534,7 @@ def main():
     parser.add_argument("--test_data_file", default=None, type=str,
                         help="An optional input evaluation data file to evaluate the perplexity on (a text file).")
                     
-    parser.add_argument("--model_type", default="llama", type=str,
+    parser.add_argument("--model_type", default="codegen", type=str,
                         help="The model architecture to be fine-tuned.")
     parser.add_argument("--model_name_or_path", default=None, type=str,
                         help="The model checkpoint for weights initialization.")
@@ -666,20 +666,19 @@ def main():
                                           cache_dir=args.cache_dir if args.cache_dir else None)
     
     config.num_labels = 2
-    tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name,
+    if args.model_type not in ["codegen"]:
+        tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name,
+                                                    do_lower_case=args.do_lower_case,
+                                                    cache_dir=args.cache_dir if args.cache_dir else None)
+    else:
+        tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name,
                                                     trust_remote_code=True)
     if args.block_size <= 0:
         args.block_size = tokenizer.max_len_single_sentence  # Our input block size will be the max possible for the model
     args.block_size = min(args.block_size, tokenizer.max_len_single_sentence)
 
     if args.model_name_or_path:
-        if args.model_type in ["llama"]:
-            # When loading in Llama, we enable flash attention 2 to speed up the training
-            model = model_class.from_pretrained(args.model_name_or_path,
-                                                # cache_dir=args.cache_dir if args.cache_dir else None,
-                                                torch_dtype = torch.bfloat16,
-                                                attn_implementation = "flash_attention_2")
-        elif args.model_type in ["starcoder"]:
+        if args.model_type in ["starcoder"]:
             model = model_class.from_pretrained(args.model_name_or_path,
                                                 use_cache = False,
                                                 torch_dtype = torch.bfloat16,
@@ -692,8 +691,8 @@ def main():
     
 
     config.pad_token_id = tokenizer(tokenizer.pad_token, truncation=True)['input_ids'][0]
-    if args.model_type in ['llama', 'starcoder']:
-        model = LlamaClassifier(model,config,tokenizer,args)
+    if args.model_type in ['codegen', 'starcoder']:
+        model = DecoderClassifier(model,config,tokenizer,args)
     else:
         model = Model(model,config,tokenizer,args)
 
