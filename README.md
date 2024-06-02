@@ -26,7 +26,7 @@ PrimeVul is a new dataset for vulnerability detection, aiming to train and evalu
 
 ```conda env create -f environment.yml```
 
-### 📖 Open-source Code LMs
+### 📖 Open-source Code LMs (< 7B)
 
 #### Standard Binary Classification
 
@@ -134,6 +134,47 @@ python run_ft.py \
     --evaluate_during_training \
     --seed 123456
 cd ..;
+```
+
+### 📖 Open-source Code LMs (7B)
+
+For 7B models, since it requires more expensive computation, we implement the training differently fromm < 7B models
+
+#### Set up
+- Install [Huggingface Accelerate](https://huggingface.co/docs/accelerate/en/index).
+- To train CodeGen2.5, we need transformers==4.33.0. Otherwise, there will be an error while loading the tokenizer. See this [issue](https://github.com/salesforce/CodeGen/issues/82) for further details. 
+- To train StarCoder2, please use the newest transformers.
+- Cconfigure Accelerate. Run `accelerate config` and choose the configuration based on your need. The configuration we used is shown in ``os_expr/default_config.yaml``.
+
+#### Standard Binary Classification with Parallel Training
+```sh
+PROJECT="parallel_primevul_cls"
+TYPE=<MODEL_TYPE>
+MODEL=<HUGGINGFACE_MODEL>
+TOKENIZER=<HUGGINGFACE_TOKENIZER>
+OUTPUT_DIR=../output/
+accelerate launch run_with_accelerator.py \
+    --project ${PROJECT} \
+    --model_dir ${MODEL} \
+    --output_dir=${OUTPUT_DIR} \
+    --model_type=${TYPE} \
+    --tokenizer_name=${TOKENIZER} \
+    --model_name_or_path=${MODEL} \
+    --do_train \
+    --do_test \
+    --train_data_file=<PATH_TO_primevul_train.jsonl> \
+    --eval_data_file=<PATH_TO_primevul_valid.jsonl> \
+    --test_data_file=<PATH_TO_primevul_test.jsonl> \
+    --gradient_accumulation_steps 4 \
+    --epoch 10 \
+    --block_size 512 \
+    --train_batch_size 8 \
+    --eval_batch_size 16 \
+    --learning_rate 2e-5 \
+    --warmup_steps 1000 \
+    --max_grad_norm 1.0 \
+    --evaluate_during_training \
+    --seed 123456
 ```
 
 ### 🤖 OpenAI Models
