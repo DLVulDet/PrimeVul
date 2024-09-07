@@ -51,7 +51,10 @@ To facilitate the future research and evaluation using PrimeVul, we retrieve mor
 
 __How to Use__: While __commit and vulnerability metadata__ are directly saved as part of the json object, __file-level metadata__ is saved separately in `file_info.json` and `file_contents/`. Using the `func_hash` in the dataset, the file information can be found in `file_info.json`, which also provides the path to the local copy of the whole file.
 
-__Note__: PrimeVul is a dataset that __combines and reconstructs__ existing vulnerability detection datasets with more accurate labels and thorough evaluation. However, not all datasets provide sufficient resources to retrieve the metadata (e.g., some samples do not originally have CWE type or CVE numbers). Therefore, we could not retrieve the same metadata for every sample in PrimeVul. In PrimeVul-v0.1, we only include vulnerabilities that we successfully retrieved their metadata. For the full set of samples that we orignally used in the paper, please refer to the original release below.
+
+> [!NOTE]
+> 
+> PrimeVul is a dataset that __combines and reconstructs__ existing vulnerability detection datasets with more accurate labels and thorough evaluation. However, not all datasets provide sufficient resources to retrieve the metadata (e.g., some samples do not originally have CWE type or CVE numbers). Therefore, we could not retrieve the same metadata for every sample in PrimeVul. In PrimeVul-v0.1, we only include vulnerabilities that we successfully retrieved their metadata. For the full set of samples that we orignally used in the paper, please refer to the original release below.
 
 ### **\[Original Release\]**
 
