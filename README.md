@@ -8,7 +8,7 @@
 <p align="left">
     📜 &nbsp;<a href="#-overview">Overview</a>
     | 📚&nbsp;<a href="#-primevul-dataset">Dataset</a>
-    | 💻&nbsp;<a href="#-experiments">Quick Start</a>
+    | 💻&nbsp;<a href="#-experiments">Experiments</a>
     | 📝&nbsp;<a href="#-citation">Citation</a>
 </p>
 
