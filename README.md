@@ -196,7 +196,7 @@ TYPE=<MODEL_TYPE>
 MODEL=<HUGGINGFACE_MODEL>
 TOKENIZER=<HUGGINGFACE_TOKENIZER>
 OUTPUT_DIR=../output/
-accelerate launch run_with_accelerator.py \
+accelerate launch run_ft_accelerator.py \
     --project ${PROJECT} \
     --model_dir ${MODEL} \
     --output_dir=${OUTPUT_DIR} \
