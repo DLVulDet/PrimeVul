@@ -24,7 +24,7 @@ from model import Model, DecoderClassifier
 cpu_cont = multiprocessing.cpu_count()
 from transformers import (WEIGHTS_NAME, AdamW, get_linear_schedule_with_warmup,
                           LlamaConfig, LlamaModel, LlamaTokenizer,
-                          Starcoder2Config, Starcoder2Model, AutoTokenizer,
+                          Starcoder2Config, Starcoder2Model, AutoTokenizer, AutoModel, AutoConfig,
                           )
 
 from accelerate import Accelerator
@@ -661,7 +661,8 @@ def main():
 
         logger.info("reload model from {}, resume from {} epoch".format(checkpoint_last, args.start_epoch))
 
-    config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+    config_class, model_class, tokenizer_class = MODEL_CLASSES.get(args.model_type, (AutoConfig, AutoModel, AutoTokenizer))
+
     config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path,
                                           cache_dir=args.cache_dir if args.cache_dir else None)
     
